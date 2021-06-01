@@ -2,18 +2,22 @@ package com.example.nytimes.viewmodel
 
 import android.arch.lifecycle.MutableLiveData
 import android.arch.lifecycle.ViewModel
+import com.example.nytimes.di.DaggerApiComponent
 import com.example.nytimes.model.Article
 import com.example.nytimes.model.ArticlesService
-import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
-import io.reactivex.observers.DisposableSingleObserver
-import io.reactivex.schedulers.Schedulers
+import javax.inject.Inject
+import retrofit2.Call
+import retrofit2.Response
 
 class ListViewModel: ViewModel() {
-
-    private val articlesService = ArticlesService()
+    @Inject
+    lateinit var articlesService:ArticlesService
+    init {
+        DaggerApiComponent.create().inject(this)
+    }
     private val disposable = CompositeDisposable()
-    val articles = MutableLiveData<List<Article>>()
+    val articles = MutableLiveData<Article>()
     val articleLoadError = MutableLiveData<Boolean>()
     val loading = MutableLiveData<Boolean>()
 
@@ -23,24 +27,25 @@ class ListViewModel: ViewModel() {
 
     private fun fetchArticles(){
         loading.value = true
-        disposable.add(
-            articlesService.getArticles()
-                .subscribeOn(Schedulers.newThread())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribeWith(object: DisposableSingleObserver<List<Article>>(){
-                    override fun onSuccess(value: List<Article>?) {
-                        articles.value = value
-                        articleLoadError.value = false
+        val call = articlesService.getArticles()
+        call.enqueue(object : retrofit2.Callback<Article>{
+                override fun onResponse(call: Call<Article>, response: Response<Article>) {
+                    if(response.isSuccessful) {
                         loading.value = false
-
-                    }
-
-                    override fun onError(e: Throwable?) {
+                        articles.postValue(response.body())
+                    } else {
                         articleLoadError.value = true
                         loading.value = false
+                        articles.postValue(null)
                     }
+                }
 
-                })
+                override fun onFailure(call: Call<Article>, t: Throwable) {
+                    articleLoadError.value = true
+                    loading.value = false
+                    articles.postValue(null)
+                }
+            }
         )
     }
 

@@ -6,24 +6,25 @@ import android.view.View
 import android.view.ViewGroup
 import com.example.nytimes.R
 import com.example.nytimes.model.Article
+import com.example.nytimes.model.Results
 import kotlinx.android.synthetic.main.item_article.view.*
 
 
-class ArticleListAdapter(var articles: ArrayList<Article>): RecyclerView.Adapter<ArticleListAdapter.ArticleViewHolder>() {
+class ArticleListAdapter(var articles: ArrayList<Results>): RecyclerView.Adapter<ArticleListAdapter.ArticleViewHolder>() {
     class ArticleViewHolder(view: View): RecyclerView.ViewHolder(view){
         private val articleName = view.name
         private val articleAuthor = view.author
         private  val publishedDate = view.date
-        fun bind(article:Article){
+        fun bind(article:Results){
             articleName.text = article.title
             articleAuthor.text = article.author
             publishedDate.text = article.publishedDate
         }
     }
 
-    fun updateArticles(newArticles: List<Article>){
+    fun updateArticles(newArticles: Article){
         articles.clear()
-        articles.addAll(newArticles)
+        articles.addAll(newArticles.results)
         notifyDataSetChanged()//Tells the system we have a new list of items
     }
     override fun onCreateViewHolder(parent: ViewGroup, p1: Int) = ArticleViewHolder(
